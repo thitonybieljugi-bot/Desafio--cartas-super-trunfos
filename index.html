@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Desafio Lógica — Super Trunfo</title>
+  <style>
+    body{font-family:Inter,system-ui,Arial;margin:24px;background:#f6f8fb;color:#111}
+    .container{max-width:900px;margin:0 auto;background:white;padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(12,20,40,0.06)}
+    h1{font-size:20px;margin:0 0 8px}
+    .board{display:flex;gap:12px;flex-wrap:wrap}
+    .card{flex:1 1 300px;border:1px solid #e6e9ef;border-radius:10px;padding:12px}
+    .card h2{margin:0 0 6px;font-size:16px}
+    .attrs button{display:block;width:100%;margin:6px 0;padding:8px;border-radius:6px;border:1px solid #d6dbe6;background:#fff;cursor:pointer}
+    .attrs button.chosen{background:#0b69ff;color:white}
+    .controls{margin:12px 0}
+    .result{padding:10px;border-radius:8px;margin-top:8px}
+    .win{background:#e6fff0;border:1px solid #a6f0c8}
+    .lose{background:#fff0f2;border:1px solid #f1a6b6}
+    .tie{background:#fff7e6;border:1px solid #f3d39b}
+    footer{font-size:12px;color:#666;margin-top:12px}
+    .small{font-size:13px;color:#555}
+    .btn{background:#0b69ff;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Desafio Lógica — Super Trunfo (Entrega pronta)</h1>
+  <p class="small">Abra este arquivo localmente (duplo-clique em index.html) ou faça upload no GitHub. O repositório deve conter este arquivo e o README (instruções abaixo).</p>
+
+  <div class="controls">
+    <button id="embaralhar" class="btn">Sortear Cartas</button>
+    <button id="reset" class="btn" style="background:#6b7280;margin-left:8px">Reiniciar</button>
+  </div>
+
+  <div id="status" class="small">Nenhuma partida iniciada.</div>
+
+  <div class="board">
+    <div class="card" id="playerCard">
+      <h2>Jogador</h2>
+      <div id="playerName">—</div>
+      <div class="attrs" id="playerAttrs"></div>
+    </div>
+
+    <div class="card" id="computerCard">
+      <h2>Computador</h2>
+      <div id="compName">—</div>
+      <div class="attrs" id="compAttrs"></div>
+    </div>
+  </div>
+
+  <div id="resultBox" class="result" style="display:none"></div>
+
+  <footer>
+    <strong>Como entregar no GitHub:</strong> crie um repositório novo, adicione este arquivo como <code>index.html</code>. No campo da atividade cole o link do repositório (ex: https://github.com/seunome/desafio-super-trunfo). 
+  </footer>
+</div>
+
+<script>
+/* README:
+  Projeto: Desafio Lógica — Super Trunfo
+  Autor: [Seu nome aqui]
+  Instruções: abra index.html no navegador. Para envio, crie repo no GitHub e envie o link.
+*/
+
+const cards = [
+  { name: 'Foguete X', attack: 85, defense: 70, agility: 60 },
+  { name: 'Ciborgue Q', attack: 78, defense: 82, agility: 55 },
+  { name: 'Dragão Alpha', attack: 92, defense: 65, agility: 68 },
+  { name: 'Navio Prisma', attack: 64, defense: 90, agility: 40 },
+  { name: 'Robo Speed', attack: 70, defense: 60, agility: 90 }
+];
+
+let playerCard = null;
+let compCard = null;
+let chosenAttr = null;
+
+function setStatus(text){document.getElementById('status').textContent = text}
+
+function renderCard(card, containerId, hideValues=false){
+  const container = document.getElementById(containerId);
+  container.innerHTML = card ? `
+    <div><strong>${card.name}</strong></div>
+  ` : '—';
+  const attrsDiv = document.getElementById(containerId === 'playerCard' ? 'playerAttrs' : 'compAttrs');
+  attrsDiv.innerHTML = '';
+  if(!card) return;
+  Object.keys(card).forEach(key => {
+    if(key === 'name') return;
+    const val = card[key];
+    const btn = document.createElement('button');
+    btn.textContent = `${key.charAt(0).toUpperCase()+key.slice(1)}: ${hideValues ? '??' : val}`;
+    btn.disabled = hideValues;
+    if(!hideValues){
+      btn.addEventListener('click', ()=> chooseAttribute(key, btn));
+    }
+    attrsDiv.appendChild(btn);
+  });
+}
+
+function chooseAttribute(attr, btn){
+  if(!playerCard || !compCard) return;
+  document.querySelectorAll('#playerAttrs button').forEach(b=>b.classList.remove('chosen'));
+  btn.classList.add('chosen');
+  chosenAttr = attr;
+  resolveRound();
+}
+
+function resolveRound(){
+  const resultBox = document.getElementById('resultBox');
+  resultBox.style.display = 'block';
+  const p = playerCard[chosenAttr];
+  const c = compCard[chosenAttr];
+  let text = `Atributo escolhido: ${chosenAttr.toUpperCase()} — Jogador: ${p} vs Computador: ${c}. `;
+  if(p > c){
+    resultBox.className = 'result win';
+    resultBox.textContent = text + 'Você venceu!';
+    setStatus('Vitória — envie o link do GitHub com este projeto.');
+  } else if(p < c){
+    resultBox.className = 'result lose';
+    resultBox.textContent = text + 'Você perdeu.';
+    setStatus('Derrota — tente novamente.');
+  } else {
+    resultBox.className = 'result tie';
+    resultBox.textContent = text + 'Empate.';
+    setStatus('Empate — sorteie outra vez.');
+  }
+  renderCard(compCard, 'computerCard', false);
+}
+
+function drawCards(){
+  chosenAttr = null;
+  resultBox.style.display = 'none';
+  const i = Math.floor(Math.random()*cards.length);
+  let j = Math.floor(Math.random()*cards.length);
+  while(j === i) j = Math.floor(Math.random()*cards.length);
+  playerCard = JSON.parse(JSON.stringify(cards[i]));
+  compCard = JSON.parse(JSON.stringify(cards[j]));
+  renderCard(playerCard, 'playerCard', false);
+  renderCard(compCard, 'computerCard', true);
+  setStatus('Escolha um atributo no cartão do jogador clicando no botão correspondente.');
+}
+
+function resetGame(){
+  playerCard = null; compCard = null; chosenAttr = null;
+  document.getElementById('playerName').textContent = '—';
+  document.getElementById('compName').textContent = '—';
+  document.getElementById('playerAttrs').innerHTML = '';
+  document.getElementById('compAttrs').innerHTML = '';
+  document.getElementById('resultBox').style.display = 'none';
+  setStatus('Nenhuma partida iniciada.');
+}
+
+window.onload = ()=>{
+  document.getElementById('embaralhar').addEventListener('click', drawCards);
+  document.getElementById('reset').addEventListener('click', resetGame);
+  resetGame();
+}
+</script>
+</body>
+</html>
